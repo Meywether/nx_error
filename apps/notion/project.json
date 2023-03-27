@@ -1,0 +1,104 @@
+{
+  "name": "notion",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/notion/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/notion",
+        "main": "apps/notion/src/main.ts",
+        "tsConfig": "apps/notion/tsconfig.app.json",
+        "assets": ["apps/notion/src/assets"],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/notion/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "build-migration-config": {
+      "executor": "@nrwl/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/typeorm-migration/",
+        "main": "apps/notion/src/typeorm.config.ts",
+        "tsConfig": "apps/notion/tsconfig.app.json"
+      }
+    },
+    "typeorm-generate-migration": {
+      "executor": "@nrwl/workspace:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "cwd": "apps/notion/",
+        "commands": [
+          "typeorm -d ../../dist/apps/typeorm-migration/main.js migration:generate"
+        ]
+      },
+      "dependsOn": ["build-migration-config"]
+    },
+    "typeorm-create-migration": {
+      "executor": "@nrwl/workspace:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "cwd": "apps/notion/",
+        "commands": ["typeorm migration:create"]
+      },
+      "dependsOn": ["build-migration-config"]
+    },
+    "typeorm-run-migrations": {
+      "executor": "@nrwl/workspace:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "cwd": "apps/notion",
+        "commands": [
+          "typeorm -d ../../dist/apps/typeorm-migration/main.js migration:run"
+        ]
+      },
+      "dependsOn": ["build-migration-config"]
+    },
+    "serve": {
+      "executor": "@nrwl/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "notion:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "notion:build:development"
+        },
+        "production": {
+          "buildTarget": "notion:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/notion/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/notion/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}
